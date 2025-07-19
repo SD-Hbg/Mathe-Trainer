@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Mathe Trainer – Unechte Brüche umwandeln</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      max-width: 650px;
+      margin: auto;
+      padding: 20px;
+    }
+    h1, h2 {
+      text-align: center;
+    }
+    .row {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 25px;
+      margin: 20px 0;
+    }
+    .frac {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .frac span, .frac input {
+      display: block;
+      text-align: center;
+      font-size: 1.8rem;
+    }
+    .line {
+      width: 60px;
+      height: 2px;
+      background: black;
+      margin: 4px 0;
+    }
+    .frac input, .big-input {
+      width: 60px;
+      font-size: 1.5rem;
+      text-align: center;
+      appearance: none;
+      border: 1px solid #ccc;
+    }
+    .frac input::-webkit-outer-spin-button,
+    .frac input::-webkit-inner-spin-button,
+    .big-input::-webkit-outer-spin-button,
+    .big-input::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+    .feedback {
+      text-align: center;
+      font-size: 1.4rem;
+      margin-top: 10px;
+    }
+    .correct { color: green; }
+    .incorrect { color: red; }
+    button {
+      margin: 10px;
+      padding: 10px 15px;
+      font-size: 1.2rem;
+    }
+    #summary {
+      margin-top: 30px;
+      font-weight: bold;
+      font-size: 1.5rem;
+      text-align: center;
+    }
+    #code-section {
+      margin-top: 20px;
+      font-size: 1.4rem;
+      background-color: #f3f3f3;
+      padding: 15px;
+      border-radius: 10px;
+      text-align: center;
+    }
+    #instruction {
+      font-size: 1.2rem;
+      text-align: center;
+      margin-bottom: 10px;
+      margin-top: 30px;
+    }
+    .button-container {
+      text-align: center;
+      margin-top: 20px;
+    }
+    .mixed {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+  </style>
+</head>
+<body>
+
+  <h2>Mathe Trainer</h2>
+  <h1>Unechte Brüche in gemischte Zahlen umwandeln</h1>
+
+  <div id="task-container">
+    <div id="instruction"></div>
+
+    <div class="row" id="task-row"></div>
+
+    <div id="feedback" class="feedback"></div>
+
+    <div class="button-container">
+      <button id="check-button" onclick="checkAnswer()">Antwort überprüfen</button>
+      <button id="next-button" onclick="nextTask()" style="display:none;">Nächste Aufgabe</button>
+    </div>
+  </div>
+
+  <div id="summary"></div>
+  <div id="code-section"></div>
+
+  <script>
+    const NUM_TASKS = 10;
+    let currentTask = 0;
+    let correctCount = 0;
+    const tasks = [];
+
+    function generateUnechterBruch() {
+      let denominator = Math.floor(Math.random() * 9) + 2; // 2–10
+      let whole = Math.floor(Math.random() * 4) + 1;       // 1–4
+      let remainder = Math.floor(Math.random() * (denominator - 1)) + 1; // 1–(d-1)
+      let numerator = whole * denominator + remainder;
+      return {
+        numerator,
+        denominator,
+        correct: { whole, remainder, denominator }
+      };
+    }
+
+    function generateTasks() {
+      for (let i = 0; i < NUM_TASKS; i++) {
+        tasks.push(generateUnechterBruch());
+      }
+    }
+
+    function showTask() {
+      const task = tasks[currentTask];
+      document.getElementById('instruction').innerHTML = `
+        Aufgabe ${currentTask + 1} von ${NUM_TASKS}<br><br>
+        <strong>Wandle den unechten Bruch in eine gemischte Zahl um.</strong>
+      `;
+      document.getElementById('task-row').innerHTML = `
+        <div class="frac">
+          <span>${task.numerator}</span>
+          <div class="line"></div>
+          <span>${task.denominator}</span>
+        </div>
+        <div style="font-size: 2rem;">=</div>
+        <div class="mixed">
+          <input id="whole" inputmode="numeric" class="big-input" />
+          <div class="frac">
+            <input id="num" inputmode="numeric" />
+            <div class="line"></div>
+            <input id="den" inputmode="numeric" />
+          </div>
+        </div>
+      `;
+      document.getElementById('feedback').textContent = '';
+      document.getElementById('feedback').className = 'feedback';
+      document.getElementById('check-button').style.display = 'inline-block';
+      document.getElementById('next-button').style.display = 'none';
+    }
+
+    function checkAnswer() {
+      const whole = parseInt(document.getElementById('whole').value);
+      const num = parseInt(document.getElementById('num').value);
+      const den = parseInt(document.getElementById('den').value);
+      const task = tasks[currentTask];
+
+      const feedback = document.getElementById('feedback');
+
+      if (
+        whole === task.correct.whole &&
+        num === task.correct.remainder &&
+        den === task.correct.denominator
+      ) {
+        feedback.textContent = '✓ Richtig!';
+        feedback.className = 'feedback correct';
+        task.correctFlag = true;
+        correctCount++;
+      } else {
+        feedback.textContent = `✗ Falsch. Richtig wäre: ${task.correct.whole} ${task.correct.remainder}/${task.correct.denominator}`;
+        feedback.className = 'feedback incorrect';
+        task.correctFlag = false;
+      }
+
+      document.getElementById('check-button').style.display = 'none';
+      const nextBtn = document.getElementById('next-button');
+      nextBtn.style.display = 'inline-block';
+      nextBtn.textContent = (currentTask === NUM_TASKS - 1) ? "Zur Auswertung" : "Nächste Aufgabe";
+    }
+
+    function nextTask() {
+      currentTask++;
+      if (currentTask < NUM_TASKS) {
+        showTask();
+      } else {
+        showSummary();
+      }
+    }
+
+    function generateCodeNumber(tasks) {
+      const even = [0, 2, 4, 6, 8];
+      const odd = [1, 3, 5, 7, 9];
+      return tasks.map(t => {
+        const pool = t.correctFlag ? even : odd;
+        return pool[Math.floor(Math.random() * pool.length)];
+      }).join('');
+    }
+
+    function showSummary() {
+      document.getElementById('task-container').style.display = 'none';
+      document.getElementById('summary').innerHTML =
+        `Du hast ${correctCount} von ${NUM_TASKS} Aufgaben richtig gelöst.`;
+      document.getElementById('code-section').innerHTML = `
+        <p>Schreibe diese Zahl auf dein Lösungsblatt:</p>
+        <p style="font-weight: bold; font-size: 1.6rem;">
+          ${generateCodeNumber(tasks)}
+        </p>
+      `;
+    }
+
+    generateTasks();
+    showTask();
+  </script>
+</body>
+</html>
