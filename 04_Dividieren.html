@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+
+<html lang="de">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Mathe Trainer – Division</title>
+<style>
+    body {
+      text-align: center;
+      font-family: sans-serif;
+      max-width: 600px;
+      margin: auto;
+      padding: 20px;
+    }
+    h1, h2 { text-align: center; }
+    h2 { font-size: 1.4rem; margin-bottom: 10px; color: #555; }
+    #task { font-size: 1.8rem; margin-bottom: 30px; }
+    input[type="text"] {
+      width: 150px;
+      padding: 8px;
+      font-size: 1.4rem;
+    }
+    .correct { color: green; margin-top: 20px; font-size: 1.4rem; }
+    .incorrect { color: red; margin-top: 20px; font-size: 1.4rem; }
+    button {
+      padding: 10px 15px;
+      margin-top: 20px;
+      font-size: 1.2rem;
+    }
+    #summary {
+      margin-top: 30px;
+      font-weight: bold;
+      font-size: 1.5rem;
+    }
+    #code-section {
+      margin-top: 20px;
+      font-size: 1.4rem;
+      background-color: #f3f3f3;
+      padding: 15px;
+      border-radius: 10px;
+    }
+    .instruction {
+      background-color: yellow;
+      padding: 10px;
+      margin-top: 20px;
+      font-size: 1.1rem;
+      text-align: center;
+      border-radius: 5px;
+    }
+</style>
+</head>
+<body>
+<h2>Mathe Trainer</h2>
+<h1>Division mit Kommazahlen</h1>
+<div style="margin-bottom: 20px; font-size: 1.1rem;">Schreibe die Aufgaben auf dein Blatt. Rechne schriftlich. Gib dann erst deine Lösung hier ein.</div><div id="task-container">
+<div id="task"></div>
+<div id="feedback"></div>
+<button id="check-button" onclick="checkAnswer()">Antwort überprüfen</button>
+<button id="next-button" onclick="nextTask()" style="display:none;">Nächste Aufgabe</button>
+<div class="instruction">Runde auf 3 Stellen nach dem Komma, wenn nötig.</div>
+</div>
+<div id="summary"></div>
+<div id="code-section"></div>
+<script>
+    const NUM_TASKS = 10;
+    let currentTask = 0;
+    let correctCount = 0;
+    const tasks = [];
+
+    function generateDecimal(maxDigits) {
+      let number;
+      do {
+        const decimalPlaces = Math.floor(Math.random() * 5); // 0–4 Nachkommastellen
+        const intDigits = maxDigits - decimalPlaces;
+        if (intDigits <= 0) continue;
+        const maxWhole = Math.pow(10, intDigits) - 1;
+        const whole = Math.floor(Math.random() * (maxWhole + 1));
+        const frac = decimalPlaces > 0 ? Math.floor(Math.random() * Math.pow(10, decimalPlaces)) : 0;
+        number = parseFloat((whole + frac / Math.pow(10, decimalPlaces)).toFixed(decimalPlaces));
+      } while (isNaN(number) || number <= 0 || number.toString().replace('.', '').length > maxDigits);
+      return number;
+    }
+
+    function generateTasks() {
+      for (let i = 0; i < NUM_TASKS; i++) {
+        const num1 = generateDecimal(5); // max. 5 Stellen
+        let num2;
+        do {
+          num2 = Math.floor(Math.random() * 99) + 1; // max. 2-stellig
+        } while (num2 === 0);
+        const result = parseFloat((num1 / num2).toFixed(3));
+        tasks.push({ num1, num2, result, userAnswer: null, correct: false });
+      }
+    }
+
+    function formatNumber(n) {
+      return n.toString().replace('.', ',');
+    }
+
+    function showTask() {
+      const task = tasks[currentTask];
+      document.getElementById('task').innerHTML = `
+        Aufgabe ${currentTask + 1} von ${NUM_TASKS}:<br><br><br>
+        <span style="font-size: 1.8rem;">
+          ${formatNumber(task.num1)} ÷ ${task.num2} = 
+          <input type="text" id="answer" />
+        </span>
+      `;
+      document.getElementById('feedback').textContent = '';
+      document.getElementById('feedback').className = '';
+      document.getElementById('check-button').style.display = 'inline-block';
+      document.getElementById('next-button').style.display = 'none';
+    }
+
+    function checkAnswer() {
+      const answerField = document.getElementById('answer');
+      const raw = answerField ? answerField.value.trim().replace(',', '.') : "";
+      const input = parseFloat(raw);
+      const task = tasks[currentTask];
+      task.userAnswer = input;
+
+      const feedback = document.getElementById('feedback');
+
+      if (!isNaN(input) && Math.abs(input - task.result) < 0.0005) {
+        feedback.textContent = "✓ Richtig!";
+        feedback.className = "correct";
+        task.correct = true;
+        correctCount++;
+      } else {
+        feedback.textContent = `✗ Falsch. Richtige Lösung: ${formatNumber(task.result)}`;
+        feedback.className = "incorrect";
+        task.correct = false;
+      }
+
+      document.getElementById('check-button').style.display = 'none';
+      const nextBtn = document.getElementById('next-button');
+      nextBtn.style.display = 'inline-block';
+      nextBtn.textContent = (currentTask === NUM_TASKS - 1) ? "Zur Auswertung" : "Nächste Aufgabe";
+    }
+
+    function nextTask() {
+      currentTask++;
+      if (currentTask < NUM_TASKS) {
+        showTask();
+      } else {
+        showSummary();
+      }
+    }
+
+    function generateCodeNumber(tasks) {
+      const even = [0, 2, 4, 6, 8];
+      const odd = [1, 3, 5, 7, 9];
+      return tasks.map(t => {
+        const pool = t.correct ? even : odd;
+        return pool[Math.floor(Math.random() * pool.length)];
+      }).join('');
+    }
+
+    function showSummary() {
+      document.getElementById('task-container').style.display = 'none';
+      document.getElementById('summary').innerHTML = 
+        `Du hast ${correctCount} von ${NUM_TASKS} Aufgaben richtig gelöst.`;
+      document.getElementById('code-section').innerHTML = `
+        <p>Schreibe diese Zahl auf dein Lösungsblatt:</p>
+        <p style="font-weight: bold; font-size: 1.6rem;">${generateCodeNumber(tasks)}</p>
+      `;
+    }
+
+    generateTasks();
+    showTask();
+  </script>
+<footer style="text-align: center; font-size: 0.8rem; margin-top: 50px;">Bereitgestellt zu Unterrichtszwecken. Keine kommerzielle Nutzung. © 2025 Dirk Schieferdecker, Hilde-Domin-Schule Herrenberg.</footer></body>
+</html>

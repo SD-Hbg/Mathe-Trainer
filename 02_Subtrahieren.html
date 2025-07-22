@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+
+<html lang="de">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Mathe Trainer – Subtraktion</title>
+<style>
+    body {
+      text-align: center;
+      font-family: sans-serif;
+      max-width: 600px;
+      margin: auto;
+      padding: 20px;
+    }
+    h1, h2 { text-align: center; }
+    h2 { font-size: 1.4rem; margin-bottom: 10px; color: #555; }
+    #task { font-size: 1.8rem; margin-bottom: 30px; }
+    input[type="text"] {
+      width: 150px;
+      padding: 8px;
+      font-size: 1.4rem;
+    }
+    .correct { color: green; margin-top: 20px; font-size: 1.4rem; }
+    .incorrect { color: red; margin-top: 20px; font-size: 1.4rem; }
+    button {
+      padding: 10px 15px;
+      margin-top: 20px;
+      font-size: 1.2rem;
+    }
+    #summary {
+      margin-top: 30px;
+      font-weight: bold;
+      font-size: 1.5rem;
+    }
+    #code-section {
+      margin-top: 20px;
+      font-size: 1.4rem;
+      background-color: #f3f3f3;
+      padding: 15px;
+      border-radius: 10px;
+    }
+</style>
+</head>
+<body>
+<h2>Mathe Trainer</h2>
+<h1>Subtraktion mit Kommazahlen</h1>
+<div style="margin-bottom: 20px; font-size: 1.1rem;">Schreibe die Aufgaben auf dein Blatt. Rechne schriftlich. Gib dann erst deine Lösung hier ein.</div><div id="task-container">
+<div id="task"></div>
+<div id="feedback"></div>
+<button id="check-button" onclick="checkAnswer()">Antwort überprüfen</button>
+<button id="next-button" onclick="nextTask()" style="display:none;">Nächste Aufgabe</button>
+</div>
+<div id="summary"></div>
+<div id="code-section"></div>
+<script>
+    const NUM_TASKS = 10;
+    let currentTask = 0;
+    let correctCount = 0;
+    const tasks = [];
+
+    function generateDecimal() {
+      let number;
+      do {
+        const decimalPlaces = Math.floor(Math.random() * 4) + 1;
+        const maxDigitsBeforeDecimal = 7 - decimalPlaces;
+        const maxWhole = Math.pow(10, maxDigitsBeforeDecimal) - 1;
+        const wholePart = Math.floor(Math.random() * (maxWhole + 1));
+        const fractionalPart = Math.floor(Math.random() * Math.pow(10, decimalPlaces));
+        number = wholePart + fractionalPart / Math.pow(10, decimalPlaces);
+        number = parseFloat(number.toFixed(decimalPlaces));
+      } while ((number.toString().replace('.', '').length) > 7 || number % 1 === 0);
+      return number;
+    }
+
+    function formatNumber(num) {
+      return num.toString().replace('.', ',');
+    }
+
+    function generateTasks() {
+      for (let i = 0; i < NUM_TASKS; i++) {
+        let num1 = generateDecimal();
+        let num2 = generateDecimal();
+        if (num1 < num2) [num1, num2] = [num2, num1];
+        const diff = parseFloat((num1 - num2).toFixed(4));
+        tasks.push({ num1, num2, diff, userAnswer: null, correct: false });
+      }
+    }
+
+    function showTask() {
+      const task = tasks[currentTask];
+      const html = `
+        Aufgabe ${currentTask + 1} von ${NUM_TASKS}:<br><br><br>
+        <span style="font-size: 1.8rem;">
+          ${formatNumber(task.num1)} − ${formatNumber(task.num2)} = 
+          <input type="text" id="answer" />
+        </span>
+      `;
+      document.getElementById('task').innerHTML = html;
+      document.getElementById('feedback').textContent = '';
+      document.getElementById('feedback').className = '';
+      document.getElementById('check-button').style.display = 'inline-block';
+      document.getElementById('next-button').style.display = 'none';
+    }
+
+    function checkAnswer() {
+      const answerField = document.getElementById('answer');
+      const raw = answerField.value.trim().replace(',', '.');
+      const input = parseFloat(raw);
+      const task = tasks[currentTask];
+      task.userAnswer = input;
+
+      const feedback = document.getElementById('feedback');
+      if (!isNaN(input) && Math.abs(input - task.diff) < 0.0001) {
+        feedback.textContent = "✓ Richtig!";
+        feedback.className = "correct";
+        task.correct = true;
+        correctCount++;
+      } else {
+        feedback.textContent = `✗ Falsch. Richtige Lösung: ${formatNumber(task.diff)}`;
+        feedback.className = "incorrect";
+        task.correct = false;
+      }
+
+      document.getElementById('check-button').style.display = 'none';
+      const nextBtn = document.getElementById('next-button');
+      nextBtn.style.display = 'inline-block';
+      nextBtn.textContent = (currentTask === NUM_TASKS - 1) ? "Zur Auswertung" : "Nächste Aufgabe";
+    }
+
+    function nextTask() {
+      currentTask++;
+      if (currentTask < NUM_TASKS) {
+        showTask();
+      } else {
+        showSummary();
+      }
+    }
+
+    function generateCodeNumber(tasks) {
+      const even = [0, 2, 4, 6, 8];
+      const odd = [1, 3, 5, 7, 9];
+      return tasks.map(t => {
+        const pool = t.correct ? even : odd;
+        return pool[Math.floor(Math.random() * pool.length)];
+      }).join('');
+    }
+
+    function showSummary() {
+      document.getElementById('task-container').style.display = 'none';
+      document.getElementById('summary').innerHTML = 
+        `Du hast ${correctCount} von ${NUM_TASKS} Aufgaben richtig gelöst.`;
+      document.getElementById('code-section').innerHTML = `
+        <p>Schreibe diese Zahl auf dein Lösungsblatt:</p>
+        <p style="font-weight: bold; font-size: 1.6rem;">${generateCodeNumber(tasks)}</p>
+      `;
+    }
+
+    generateTasks();
+    showTask();
+  </script>
+<footer style="text-align: center; font-size: 0.8rem; margin-top: 50px;">Bereitgestellt zu Unterrichtszwecken. Keine kommerzielle Nutzung. © 2025 Dirk Schieferdecker, Hilde-Domin-Schule Herrenberg.</footer></body>
+</html>
